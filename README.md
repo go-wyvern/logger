@@ -9,7 +9,7 @@ logger日志,内置了2个缓存container,所有的日志输入时,会把日志�
 - 打印文本日志
     - 输出格式是文本:
     
-            cfg := DefaultLog.NewConfig(logger.ToConsole)
+            cfg := logger.NewConfig(logger.ToConsole)
             cfg.SetCententType(logger.ToConsole, logger.FormatText)
             
             2016/05/23 15:51:19 [example.go:14] <example>  Debug: test for log 1
@@ -18,7 +18,7 @@ logger日志,内置了2个缓存container,所有的日志输入时,会把日志�
             
     - 输出格式是json:
         
-            cfg := DefaultLog.NewConfig(DefaultLog.ToConsole)
+            cfg := logger.NewConfig(DefaultLog.ToConsole)
             cfg.SetCententType(logger.ToConsole, logger.FormatJson)
             
             {"log_id":"","log_level":"Debug","module":"example","time":"2016/05/23 16:12:41","filename":"example.go","line":14,"remark":"test for log 1"}
