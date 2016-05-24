@@ -11,7 +11,7 @@ type LogInfo struct {
 	LogTime  string `json:"time"`
 	Filename string  `json:"filename"`
 	Line     int   `json:"line"`
-	Message  string   `json:"message,omitempty"`
+	Message  string   `json:"message"`
 
 	Data     map[string]interface{} `json:"data,omitempty"`
 }
