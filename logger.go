@@ -1,14 +1,14 @@
 package logger
 
 import (
-	"runtime"
-	"path"
-	"time"
-	"fmt"
-	"sync"
-	"io"
 	"encoding/json"
+	"fmt"
+	"io"
+	"path"
+	"runtime"
 	"strings"
+	"sync"
+	"time"
 )
 
 type Logger struct {
@@ -22,7 +22,7 @@ var output = make(chan string, 1024)
 var stop_log = make(chan bool)
 
 func New(c *LogConfig) *Logger {
-	logger := &Logger{config: c, info:NewLogInfo(), Cache: NewCache(c.CacheSize)}
+	logger := &Logger{config: c, info: NewLogInfo(), Cache: NewCache(c.CacheSize)}
 	logger.Start()
 	return logger
 }
@@ -38,11 +38,11 @@ func (l *Logger) Start() {
 			case out_byte := <-output:
 				for _, line := range strings.Split(out_byte, "\n") {
 					if line != "" {
-						if l.config.LogPlace & ToFile != 0&& l.config.LogPlace & ToConsole != 0 {
+						if l.config.LogPlace&ToFile != 0 && l.config.LogPlace&ToConsole != 0 {
 							l.ToFileAndStdout([]byte(line))
-						} else if l.config.LogPlace & ToConsole != 0 {
+						} else if l.config.LogPlace&ToConsole != 0 {
 							l.ToConsole([]byte(line))
-						} else if l.config.LogPlace & ToFile != 0 {
+						} else if l.config.LogPlace&ToFile != 0 {
 							l.ToFile([]byte(line))
 						}
 					}
@@ -108,10 +108,15 @@ func (l *Logger) Output(level string, s string) {
 	l.info.LogTime = now.Format("2006/01/02 15:04:05")
 	l.info.Message = s
 	json_format, _ := json.Marshal(&l.info)
-	if json_format[len(json_format) - 1] != '\n' {
+	if json_format[len(json_format)-1] != '\n' {
 		json_format = append(json_format, []byte("\n")...)
 	}
-	l.Cache.PushToCache(json_format)
+	//l.Cache.PushToCache(json_format)
+	if l.Cache.Switch {
+		l.Cache.PushToCache(json_format)
+	} else {
+		output <- string(json_format)
+	}
 }
 
 func (l *Logger) Debug(format string, a ...interface{}) {
@@ -120,25 +125,25 @@ func (l *Logger) Debug(format string, a ...interface{}) {
 	}
 }
 
-func (l *Logger) Warn(format string, a...interface{}) {
+func (l *Logger) Warn(format string, a ...interface{}) {
 	if l.GetConfig().level >= Warn {
 		l.Output("Warn", fmt.Sprintf(format, a...))
 	}
 }
 
-func (l *Logger) Alert(format string, a...interface{}) {
+func (l *Logger) Alert(format string, a ...interface{}) {
 	if l.GetConfig().level >= Alert {
 		l.Output("Alert", fmt.Sprintf(format, a...))
 	}
 }
 
-func (l *Logger) Info(format string, a...interface{}) {
+func (l *Logger) Info(format string, a ...interface{}) {
 	if l.GetConfig().level >= Info {
 		l.Output("Info", fmt.Sprintf(format, a...))
 	}
 }
 
-func (l *Logger) Error(format string, a...interface{}) {
+func (l *Logger) Error(format string, a ...interface{}) {
 	if l.GetConfig().level >= Error {
 		l.Output("Error", fmt.Sprintf(format, a...))
 	}
@@ -184,7 +189,7 @@ func (l *Logger) Writeplace(iw io.Writer, cType ContentType, jsondata []byte) er
 	} else {
 		return fmt.Errorf("Unknow ContentType")
 	}
-	if strByte[len(strByte) - 1] != '\n' {
+	if strByte[len(strByte)-1] != '\n' {
 		strByte = append(strByte, []byte("\n")...)
 	}
 	_, err = iw.Write(strByte)
@@ -193,5 +198,3 @@ func (l *Logger) Writeplace(iw io.Writer, cType ContentType, jsondata []byte) er
 	}
 	return nil
 }
-
-
