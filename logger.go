@@ -63,18 +63,22 @@ func (l *Logger) Stop() {
 	l.Cache.Stop()
 }
 
-func (l *Logger) GetLogInfo() *LogInfo {
+func (l Logger) GetLogInfo() *LogInfo {
 	return l.info
 }
 
-func (l *Logger) WithField(key string, value interface{}) *Logger {
-	l.info = l.info.WithField(key, value)
-	return l
+func (l Logger) WithField(key string, value interface{}) *Logger {
+	info:=NewLogInfo()
+	info.Module=l.info.Module
+	l.info = info.WithField(key, value)
+	return &l
 }
 
-func (l *Logger) WithFields(fields Fields) *Logger {
-	l.info = l.info.WithFields(fields)
-	return l
+func (l Logger) WithFields(fields Fields) *Logger {
+	info:=NewLogInfo()
+	info.Module=l.info.Module
+	l.info = info.WithFields(fields)
+	return &l
 }
 
 func (l *Logger) SetModule(module string) *Logger {
@@ -82,11 +86,11 @@ func (l *Logger) SetModule(module string) *Logger {
 	return l
 }
 
-func (l Logger) SetLogInfo(info *LogInfo) *Logger {
+func (l *Logger) SetLogInfo(info *LogInfo) *Logger {
 	module := l.info.Module
 	l.info = info
 	l.info.Module = module
-	return &l
+	return l
 }
 
 func (l *Logger) Output(level string, s string) {

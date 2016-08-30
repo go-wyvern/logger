@@ -27,6 +27,14 @@ const (
 	Debug
 )
 
+var LogLevels = map[string]Level{
+	"Alert":   Alert,
+	"Error":   Error,
+	"Warn": Warn,
+	"Info":    Info,
+	"Debug":   Debug,
+}
+
 var defaultCacheSize = 1024
 
 type LogConfig struct {

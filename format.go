@@ -13,7 +13,7 @@ type LogInfo struct {
 	Line     int   `json:"line"`
 	Message  string   `json:"message"`
 
-	Data     map[string]interface{} `json:"data,omitempty"`
+	Data     Fields `json:"data,omitempty"`
 }
 
 type Fields map[string]interface{}
@@ -45,7 +45,7 @@ func (info LogInfo) FormatText() string {
 }
 
 func (info *LogInfo) WithField(key string, value interface{}) *LogInfo {
-	info.Data[key] = value
+	info.WithFields(Fields{key: value})
 	return info
 }
 
