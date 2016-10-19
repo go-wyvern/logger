@@ -6,14 +6,14 @@ import (
 )
 
 type LogInfo struct {
-	LogLevel string    `json:"log_level"`
-	Module   string  `json:"module"`
+	LogLevel string `json:"log_level"`
+	Module   string `json:"module"`
 	LogTime  string `json:"time"`
-	Filename string  `json:"filename"`
-	Line     int   `json:"line"`
-	Message  string   `json:"message"`
+	Filename string `json:"filename"`
+	Line     int    `json:"line"`
+	Message  string `json:"message"`
 
-	Data     Fields `json:"data,omitempty"`
+	Data Fields `json:"data,omitempty"`
 }
 
 type Fields map[string]interface{}
@@ -25,7 +25,7 @@ func NewLogInfo() *LogInfo {
 }
 
 func (info LogInfo) FormatJson() ([]byte, error) {
-	info.Data["log_level"] = info.LogLevel
+	info.Data["level"] = info.LogLevel
 	info.Data["module"] = info.Module
 	info.Data["time"] = info.LogTime
 	info.Data["filename"] = info.Filename
@@ -50,7 +50,7 @@ func (info *LogInfo) WithField(key string, value interface{}) *LogInfo {
 }
 
 func (info *LogInfo) WithFields(fields Fields) *LogInfo {
-	data := make(Fields, len(info.Data) + len(fields))
+	data := make(Fields, len(info.Data)+len(fields))
 	for k, v := range info.Data {
 		data[k] = v
 	}
