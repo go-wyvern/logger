@@ -68,15 +68,15 @@ func (l Logger) GetLogInfo() *LogInfo {
 }
 
 func (l Logger) WithField(key string, value interface{}) *Logger {
-	info:=NewLogInfo()
-	info.Module=l.info.Module
+	info := NewLogInfo()
+	info.Module = l.info.Module
 	l.info = info.WithField(key, value)
 	return &l
 }
 
 func (l Logger) WithFields(fields Fields) *Logger {
-	info:=NewLogInfo()
-	info.Module=l.info.Module
+	info := NewLogInfo()
+	info.Module = l.info.Module
 	l.info = info.WithFields(fields)
 	return &l
 }
@@ -109,7 +109,7 @@ func (l *Logger) Output(level string, s string) {
 	l.info.Filename = filename
 	l.info.Line = line
 	l.info.LogLevel = level
-	l.info.LogTime = now.Format("2006/01/02 15:04:05")
+	l.info.LogTime = now.UTC().Format("2006/01/02 15:04:05")
 	l.info.Message = s
 	json_format, _ := json.Marshal(&l.info)
 	if json_format[len(json_format)-1] != '\n' {
