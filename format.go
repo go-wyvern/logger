@@ -51,9 +51,9 @@ func (info *LogInfo) WithField(key string, value interface{}) *LogInfo {
 
 func (info *LogInfo) WithFields(fields Fields) *LogInfo {
 	data := make(Fields, len(info.Data)+len(fields))
-	for k, v := range info.Data {
-		data[k] = v
-	}
+	// for k, v := range info.Data {
+	// 	data[k] = v
+	// }
 	for k, v := range fields {
 		data[k] = v
 	}

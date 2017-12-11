@@ -13,6 +13,7 @@ import (
 
 type BackEndCache struct {
 	SyncMu    sync.Mutex
+	stop      bool
 	Switch    bool
 	CacheSize int
 	Container *Container
@@ -53,7 +54,6 @@ func (c *Container) Next() *Container {
 func (b *BackEndCache) Stop() {
 	b.Container.Data.Reset()
 	b.Container.NextContainer.Data.Reset()
-	b.Switch = false
 }
 
 func (b *BackEndCache) CanWriter(s []byte) bool {
@@ -63,6 +63,9 @@ func (b *BackEndCache) CanWriter(s []byte) bool {
 func (b *BackEndCache) PushToCache(s []byte) (int, error) {
 	if b.Switch {
 		b.SyncMu.Lock()
+		if b.stop {
+			return 0, nil
+		}
 		defer b.SyncMu.Unlock()
 		if b.CanWriter(s) {
 			return b.In.Write(s)
@@ -100,7 +103,7 @@ func (b *BackEndCache) TimeoutFlush(timeout time.Duration) {
 	}()
 	select {
 	case <-done:
-		output <- string(b.Container.Data.Bytes())
+		output.Send(string(b.Container.Data.Bytes()))
 	case <-time.After(timeout):
 		fmt.Fprintln(os.Stderr, "Flush took longer than", timeout)
 	}

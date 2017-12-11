@@ -20,7 +20,40 @@ type Logger struct {
 	wait   chan interface{}
 }
 
-var output = make(chan string, 1024)
+type SafeChannel struct {
+	C      chan string
+	closed bool
+	mutex  sync.Mutex
+}
+
+func NewSafeChannel() *SafeChannel {
+	return &SafeChannel{C: make(chan string, 1024)}
+}
+
+func (mc *SafeChannel) Send(date string) {
+	if mc.IsClosed() {
+		return
+	} else {
+		mc.C <- date
+	}
+}
+
+func (mc *SafeChannel) SafeClose() {
+	mc.mutex.Lock()
+	if !mc.closed {
+		close(mc.C)
+		mc.closed = true
+	}
+	mc.mutex.Unlock()
+}
+
+func (mc *SafeChannel) IsClosed() bool {
+	mc.mutex.Lock()
+	defer mc.mutex.Unlock()
+	return mc.closed
+}
+
+var output = NewSafeChannel()
 var stop_log = make(chan bool)
 
 func New(c *LogConfig) *Logger {
@@ -38,7 +71,7 @@ func (l *Logger) Start() {
 	L:
 		for {
 			select {
-			case out_byte, ok := <-output:
+			case out_byte, ok := <-output.C:
 				if !ok {
 					break L
 				}
@@ -64,14 +97,12 @@ func (l *Logger) Stop() {
 	if l.Cache.Switch {
 		l.Cache.SyncMu.Lock()
 		l.Cache.Sync() //先同步日志在关闭
+		output.SafeClose()
+		l.Cache.stop = true
 		l.Cache.SyncMu.Unlock()
+		<-l.wait
+		l.Cache.Stop()
 	}
-	l.Mu.Lock()
-	close(output)
-	l.stop = true
-	l.Mu.Unlock()
-	<-l.wait
-	l.Cache.Stop()
 }
 
 func (l Logger) GetLogInfo() *LogInfo {
@@ -115,11 +146,8 @@ func (l *Logger) Output(level string, s string) {
 		line = 0
 	}
 	_, filename := path.Split(file)
-	l.Mu.Lock()
-	if l.stop {
-		return
-	}
-	defer l.Mu.Unlock()
+	// l.Mu.Lock()
+	// defer l.Mu.Unlock()
 	l.info.Filename = filename
 	l.info.Line = line
 	l.info.LogLevel = level
@@ -130,9 +158,17 @@ func (l *Logger) Output(level string, s string) {
 		json_format = append(json_format, []byte("\n")...)
 	}
 	if l.Cache.Switch {
-		l.Cache.PushToCache(json_format)
+		if !output.IsClosed() {
+			l.Cache.PushToCache(json_format)
+		}
 	} else {
-		output <- string(json_format)
+		if l.config.LogPlace&ToFile != 0 && l.config.LogPlace&ToConsole != 0 {
+			l.ToFileAndStdout(json_format)
+		} else if l.config.LogPlace&ToConsole != 0 {
+			l.ToConsole(json_format)
+		} else if l.config.LogPlace&ToFile != 0 {
+			l.ToFile(json_format)
+		}
 	}
 }
 
