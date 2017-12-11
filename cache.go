@@ -1,16 +1,18 @@
 package logger
 
 import (
-	"bytes"
 	"bufio"
-	"os"
+	"bytes"
 	"fmt"
+	"os"
+	"sync"
 	"time"
 
 	"github.com/gosuri/uiprogress"
 )
 
 type BackEndCache struct {
+	SyncMu    sync.Mutex
 	Switch    bool
 	CacheSize int
 	Container *Container
@@ -36,10 +38,10 @@ func NewCache(size int) *BackEndCache {
 	w := bufio.NewWriterSize(container.Data, size)
 	container.Data.Truncate(0)
 	return &BackEndCache{
-		CacheSize:size,
-		Container:container,
-		In: w,
-		Switch:true,
+		CacheSize: size,
+		Container: container,
+		In:        w,
+		Switch:    true,
 	}
 }
 
@@ -55,11 +57,13 @@ func (b *BackEndCache) Stop() {
 }
 
 func (b *BackEndCache) CanWriter(s []byte) bool {
-	return b.In.Buffered() + len(s) < b.CacheSize
+	return b.In.Buffered()+len(s) < b.CacheSize
 }
 
 func (b *BackEndCache) PushToCache(s []byte) (int, error) {
 	if b.Switch {
+		b.SyncMu.Lock()
+		defer b.SyncMu.Unlock()
 		if b.CanWriter(s) {
 			return b.In.Write(s)
 		} else {
@@ -112,4 +116,3 @@ func (b *BackEndCache) Sync() {
 	b.In.Reset(b.Container.NextContainer.Data)
 	b.Convert()
 }
-

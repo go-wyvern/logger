@@ -16,6 +16,7 @@ type Logger struct {
 	info   *LogInfo
 	Mu     sync.Mutex
 	Cache  *BackEndCache
+	stop   bool
 	wait   chan interface{}
 }
 
@@ -60,8 +61,15 @@ func (l *Logger) Start() {
 }
 
 func (l *Logger) Stop() {
-	l.Cache.Sync() //先同步日志在关闭
+	if l.Cache.Switch {
+		l.Cache.SyncMu.Lock()
+		l.Cache.Sync() //先同步日志在关闭
+		l.Cache.SyncMu.Unlock()
+	}
+	l.Mu.Lock()
 	close(output)
+	l.stop = true
+	l.Mu.Unlock()
 	<-l.wait
 	l.Cache.Stop()
 }
@@ -108,6 +116,9 @@ func (l *Logger) Output(level string, s string) {
 	}
 	_, filename := path.Split(file)
 	l.Mu.Lock()
+	if l.stop {
+		return
+	}
 	defer l.Mu.Unlock()
 	l.info.Filename = filename
 	l.info.Line = line
@@ -118,7 +129,6 @@ func (l *Logger) Output(level string, s string) {
 	if json_format[len(json_format)-1] != '\n' {
 		json_format = append(json_format, []byte("\n")...)
 	}
-	//l.Cache.PushToCache(json_format)
 	if l.Cache.Switch {
 		l.Cache.PushToCache(json_format)
 	} else {
