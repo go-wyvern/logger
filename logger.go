@@ -16,13 +16,14 @@ type Logger struct {
 	info   *LogInfo
 	Mu     sync.Mutex
 	Cache  *BackEndCache
+	wait   chan interface{}
 }
 
 var output = make(chan string, 1024)
 var stop_log = make(chan bool)
 
 func New(c *LogConfig) *Logger {
-	logger := &Logger{config: c, info: NewLogInfo(), Cache: NewCache(c.CacheSize)}
+	logger := &Logger{config: c, info: NewLogInfo(), Cache: NewCache(c.CacheSize), wait: make(chan interface{})}
 	logger.Start()
 	return logger
 }
@@ -33,9 +34,13 @@ func (l *Logger) GetConfig() *LogConfig {
 
 func (l *Logger) Start() {
 	go func() {
+	L:
 		for {
 			select {
-			case out_byte := <-output:
+			case out_byte, ok := <-output:
+				if !ok {
+					break L
+				}
 				for _, line := range strings.Split(out_byte, "\n") {
 					if line != "" {
 						if l.config.LogPlace&ToFile != 0 && l.config.LogPlace&ToConsole != 0 {
@@ -47,19 +52,17 @@ func (l *Logger) Start() {
 						}
 					}
 				}
-			case <-stop_log:
-				break
 			}
 
 		}
+		l.wait <- struct{}{}
 	}()
 }
 
 func (l *Logger) Stop() {
 	l.Cache.Sync() //先同步日志在关闭
-	stop_log <- true
 	close(output)
-	close(stop_log)
+	<-l.wait
 	l.Cache.Stop()
 }
 
