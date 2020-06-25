@@ -1,5 +1,6 @@
 ### logger日志架构
 
+[![License](http://img.shields.io/badge/license-mit-blue.svg?style=flat-square)](https://raw.githubusercontent.com/go-wyvern/logger/master/LICENSE)
 [![Go.Dev reference](https://img.shields.io/badge/go.dev-reference-blue?logo=go&logoColor=white)](https://pkg.go.dev/github.com/go-wyvern/logger?tab=doc)
 -------------------------------------------------------------------
 logger日志,内置了2个缓存container,所有的日志输入时,会把日志中的数据先存入container1
