@@ -1,6 +1,6 @@
 ### logger日志架构
 
-![DefaultLog](http://7xs3v3.com1.z0.glb.clouddn.com/pingxx_log.png)
+[![Go.Dev reference](https://img.shields.io/badge/go.dev-reference-blue?logo=go&logoColor=white)](https://pkg.go.dev/github.com/go-wyvern/logger?tab=doc)
 -------------------------------------------------------------------
 logger日志,内置了2个缓存container,所有的日志输入时,会把日志中的数据先存入container1
 中,待container1存满之后,会将container1释放并输出,并且,接下来的日志会放入container2
